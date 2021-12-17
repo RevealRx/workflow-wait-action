@@ -1,0 +1,21 @@
+name: workflow-fail
+
+on:
+  push:
+    branches:
+      - main
+      - release/0.2.0
+    paths:
+      - .github/workflows/workflow-fail.yml
+
+jobs:
+  workflow_fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow Fail Test
+        shell: bash
+        run: |
+          sleep 15
+          date
+          echo "Fake ERROR" 1>&2
+          exit 125

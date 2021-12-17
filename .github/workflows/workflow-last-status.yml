@@ -1,0 +1,28 @@
+name: workflow-last
+
+on:
+  push:
+    branches:
+      - main
+      - release/0.2.0
+
+jobs:
+  workflow_last:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v2
+
+      - name: Pause until all workflows are completed
+        uses: ./
+        with: 
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+          timeout: 60
+          interval: 10
+          initial_delay: 5
+          require_success: true
+          workflows: |
+            workflow-fail
+
+      - name: Resume and run once, after all workflows are completed (should never happen)
+        run: date
