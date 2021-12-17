@@ -1,6 +1,6 @@
 {
   "name": "workflow-wait-action",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/index.js",
   "author": "William Garcia <garcia.rodriguez.william@gmail.com>",
   "license": "MIT",
@@ -14,22 +14,22 @@
     "url": "git+https://github.com/willgarcia/workflow-wait-action.git"
   },
   "scripts": {
-    "build": "ncc build src/index.ts --license LICENSES.txt && git add dist/",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && ncc build src/index.ts --license LICENSES.txt && git add dist/",
     "husky": "husky install",
     "git:pre-commit": "yarn build",
     "git:commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
   },
   "dependencies": {
-    "@actions/core": "^1.4.0",
+    "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^12.1.4",
-    "@commitlint/config-conventional": "^12.1.4",
-    "@commitlint/prompt-cli": "^12.1.4",
-    "@types/node": "^16.3.3",
-    "@vercel/ncc": "^0.28.6",
-    "husky": "^7.0.1",
-    "typescript": "^4.3.5"
+    "@commitlint/cli": "^15.0.0",
+    "@commitlint/config-conventional": "^15.0.0",
+    "@commitlint/prompt-cli": "^15.0.0",
+    "@types/node": "16.3.3",
+    "@vercel/ncc": "^0.33.0",
+    "husky": "^7.0.4",
+    "typescript": "^4.5.4"
   }
 }

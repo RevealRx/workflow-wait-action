@@ -27,7 +27,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issue = exports.issueCommand = void 0;
-const os = __importStar(__nccwpck_require__(87));
+const os = __importStar(__nccwpck_require__(37));
 const utils_1 = __nccwpck_require__(278);
 /**
  * Commands
@@ -134,12 +134,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
+exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __nccwpck_require__(351);
 const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(278);
-const os = __importStar(__nccwpck_require__(87));
-const path = __importStar(__nccwpck_require__(622));
+const os = __importStar(__nccwpck_require__(37));
+const path = __importStar(__nccwpck_require__(17));
+const oidc_utils_1 = __nccwpck_require__(41);
 /**
  * The code to exit an action
  */
@@ -312,19 +313,30 @@ exports.debug = debug;
 /**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
+function error(message, properties = {}) {
+    command_1.issueCommand('error', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
- * Adds an warning issue
+ * Adds a warning issue
  * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+function warning(message, properties = {}) {
+    command_1.issueCommand('warning', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
+/**
+ * Adds a notice issue
+ * @param message notice issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function notice(message, properties = {}) {
+    command_1.issueCommand('notice', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+exports.notice = notice;
 /**
  * Writes info to log with console.log.
  * @param message info message
@@ -397,6 +409,12 @@ function getState(name) {
     return process.env[`STATE_${name}`] || '';
 }
 exports.getState = getState;
+function getIDToken(aud) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield oidc_utils_1.OidcClient.getIDToken(aud);
+    });
+}
+exports.getIDToken = getIDToken;
 //# sourceMappingURL=core.js.map
 
 /***/ }),
@@ -430,8 +448,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const fs = __importStar(__nccwpck_require__(747));
-const os = __importStar(__nccwpck_require__(87));
+const fs = __importStar(__nccwpck_require__(147));
+const os = __importStar(__nccwpck_require__(37));
 const utils_1 = __nccwpck_require__(278);
 function issueCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -450,6 +468,90 @@ exports.issueCommand = issueCommand;
 
 /***/ }),
 
+/***/ 41:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.OidcClient = void 0;
+const http_client_1 = __nccwpck_require__(925);
+const auth_1 = __nccwpck_require__(702);
+const core_1 = __nccwpck_require__(186);
+class OidcClient {
+    static createHttpClient(allowRetry = true, maxRetry = 10) {
+        const requestOptions = {
+            allowRetries: allowRetry,
+            maxRetries: maxRetry
+        };
+        return new http_client_1.HttpClient('actions/oidc-client', [new auth_1.BearerCredentialHandler(OidcClient.getRequestToken())], requestOptions);
+    }
+    static getRequestToken() {
+        const token = process.env['ACTIONS_ID_TOKEN_REQUEST_TOKEN'];
+        if (!token) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_TOKEN env variable');
+        }
+        return token;
+    }
+    static getIDTokenUrl() {
+        const runtimeUrl = process.env['ACTIONS_ID_TOKEN_REQUEST_URL'];
+        if (!runtimeUrl) {
+            throw new Error('Unable to get ACTIONS_ID_TOKEN_REQUEST_URL env variable');
+        }
+        return runtimeUrl;
+    }
+    static getCall(id_token_url) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const httpclient = OidcClient.createHttpClient();
+            const res = yield httpclient
+                .getJson(id_token_url)
+                .catch(error => {
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
+        Error Message: ${error.result.message}`);
+            });
+            const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
+            if (!id_token) {
+                throw new Error('Response json body do not have ID Token field');
+            }
+            return id_token;
+        });
+    }
+    static getIDToken(audience) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // New ID Token is requested from action service
+                let id_token_url = OidcClient.getIDTokenUrl();
+                if (audience) {
+                    const encodedAudience = encodeURIComponent(audience);
+                    id_token_url = `${id_token_url}&audience=${encodedAudience}`;
+                }
+                core_1.debug(`ID token url is ${id_token_url}`);
+                const id_token = yield OidcClient.getCall(id_token_url);
+                core_1.setSecret(id_token);
+                return id_token;
+            }
+            catch (error) {
+                throw new Error(`Error message: ${error.message}`);
+            }
+        });
+    }
+}
+exports.OidcClient = OidcClient;
+//# sourceMappingURL=oidc-utils.js.map
+
+/***/ }),
+
 /***/ 278:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -458,7 +560,7 @@ exports.issueCommand = issueCommand;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.toCommandValue = void 0;
+exports.toCommandProperties = exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -473,19 +575,39 @@ function toCommandValue(input) {
     return JSON.stringify(input);
 }
 exports.toCommandValue = toCommandValue;
+/**
+ *
+ * @param annotationProperties
+ * @returns The command properties to send with the actual annotation command
+ * See IssueCommandProperties: https://github.com/actions/runner/blob/main/src/Runner.Worker/ActionCommandManager.cs#L646
+ */
+function toCommandProperties(annotationProperties) {
+    if (!Object.keys(annotationProperties).length) {
+        return {};
+    }
+    return {
+        title: annotationProperties.title,
+        file: annotationProperties.file,
+        line: annotationProperties.startLine,
+        endLine: annotationProperties.endLine,
+        col: annotationProperties.startColumn,
+        endColumn: annotationProperties.endColumn
+    };
+}
+exports.toCommandProperties = toCommandProperties;
 //# sourceMappingURL=utils.js.map
 
 /***/ }),
 
-/***/ 53:
+/***/ 87:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Context = void 0;
-const fs_1 = __nccwpck_require__(747);
-const os_1 = __nccwpck_require__(87);
+const fs_1 = __nccwpck_require__(147);
+const os_1 = __nccwpck_require__(37);
 class Context {
     /**
      * Hydrate the context from the environment
@@ -564,7 +686,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getOctokit = exports.context = void 0;
-const Context = __importStar(__nccwpck_require__(53));
+const Context = __importStar(__nccwpck_require__(87));
 const utils_1 = __nccwpck_require__(30);
 exports.context = new Context.Context();
 /**
@@ -657,7 +779,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
-const Context = __importStar(__nccwpck_require__(53));
+const Context = __importStar(__nccwpck_require__(87));
 const Utils = __importStar(__nccwpck_require__(914));
 // octokit + plugins
 const core_1 = __nccwpck_require__(762);
@@ -692,14 +814,80 @@ exports.getOctokitOptions = getOctokitOptions;
 
 /***/ }),
 
+/***/ 702:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+class BasicCredentialHandler {
+    constructor(username, password) {
+        this.username = username;
+        this.password = password;
+    }
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' +
+                Buffer.from(this.username + ':' + this.password).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BasicCredentialHandler = BasicCredentialHandler;
+class BearerCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] = 'Bearer ' + this.token;
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.BearerCredentialHandler = BearerCredentialHandler;
+class PersonalAccessTokenCredentialHandler {
+    constructor(token) {
+        this.token = token;
+    }
+    // currently implements pre-authorization
+    // TODO: support preAuth = false where it hooks on 401
+    prepareRequest(options) {
+        options.headers['Authorization'] =
+            'Basic ' + Buffer.from('PAT:' + this.token).toString('base64');
+    }
+    // This handler cannot handle 401
+    canHandleAuthentication(response) {
+        return false;
+    }
+    handleAuthentication(httpClient, requestInfo, objs) {
+        return null;
+    }
+}
+exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
+
+
+/***/ }),
+
 /***/ 925:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const http = __nccwpck_require__(605);
-const https = __nccwpck_require__(211);
+const http = __nccwpck_require__(685);
+const https = __nccwpck_require__(687);
 const pm = __nccwpck_require__(443);
 let tunnel;
 var HttpCodes;
@@ -4092,11 +4280,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Stream = _interopDefault(__nccwpck_require__(413));
-var http = _interopDefault(__nccwpck_require__(605));
-var Url = _interopDefault(__nccwpck_require__(835));
-var https = _interopDefault(__nccwpck_require__(211));
-var zlib = _interopDefault(__nccwpck_require__(761));
+var Stream = _interopDefault(__nccwpck_require__(781));
+var http = _interopDefault(__nccwpck_require__(685));
+var Url = _interopDefault(__nccwpck_require__(310));
+var https = _interopDefault(__nccwpck_require__(687));
+var zlib = _interopDefault(__nccwpck_require__(796));
 
 // Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
 
@@ -4247,7 +4435,7 @@ FetchError.prototype.name = 'FetchError';
 
 let convert;
 try {
-	convert = __nccwpck_require__(877).convert;
+	convert = (__nccwpck_require__(877).convert);
 } catch (e) {}
 
 const INTERNALS = Symbol('Body internals');
@@ -5730,7 +5918,7 @@ fetch.Promise = global.Promise;
 
 module.exports = exports = fetch;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.default = exports;
+exports["default"] = exports;
 exports.Headers = Headers;
 exports.Request = Request;
 exports.Response = Response;
@@ -5802,13 +5990,13 @@ module.exports = __nccwpck_require__(219);
 "use strict";
 
 
-var net = __nccwpck_require__(631);
-var tls = __nccwpck_require__(16);
-var http = __nccwpck_require__(605);
-var https = __nccwpck_require__(211);
-var events = __nccwpck_require__(614);
-var assert = __nccwpck_require__(357);
-var util = __nccwpck_require__(669);
+var net = __nccwpck_require__(808);
+var tls = __nccwpck_require__(404);
+var http = __nccwpck_require__(685);
+var https = __nccwpck_require__(687);
+var events = __nccwpck_require__(361);
+var assert = __nccwpck_require__(491);
+var util = __nccwpck_require__(837);
 
 
 exports.httpOverHttp = httpOverHttp;
@@ -6134,6 +6322,280 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 373:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.config = exports.ActionStatus = exports.oneSecond = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const oneSecond = 1000;
+exports.oneSecond = oneSecond;
+var ActionStatus;
+(function (ActionStatus) {
+    ActionStatus["WORKFLOWS_AWAITED_OK"] = "workflows_awaited_ok";
+    ActionStatus["TIMEOUT_EXCEEDED"] = "action_timeout_exceeded";
+})(ActionStatus || (ActionStatus = {}));
+exports.ActionStatus = ActionStatus;
+const config = () => {
+    const config = {
+        timeout: parseInt(core.getInput('timeout')),
+        interval: parseInt(core.getInput('interval')),
+        initial_delay: parseInt(core.getInput('initial_delay')),
+        require_success: core.getInput('require_success').toLowerCase() === 'true'
+    };
+    const info = [
+        `Action configuration:`,
+        `${config.initial_delay}s initial delay,`,
+        `${config.interval}s interval,`,
+        `${config.timeout}s timeout`,
+        `require success: ${config.require_success}`,
+    ];
+    core.info(info.join(' '));
+    core.info('');
+    return config;
+};
+exports.config = config;
+
+
+/***/ }),
+
+/***/ 978:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.logGithubWorkflows = exports.filterGithubWorkflows = exports.checkGithubWorkflows = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const github = __importStar(__nccwpck_require__(438));
+const getGithubWorkflows = async () => {
+    const client = github.getOctokit(core.getInput('access_token', { required: true }));
+    return Promise.all(['queued', 'in_progress']
+        .map((status) => status)
+        .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
+};
+const getFailedGithubWorkflows = async () => {
+    const client = github.getOctokit(core.getInput('access_token', { required: true }));
+    return Promise.all(['failure', 'cancelled', 'timed_out']
+        .map((status) => status)
+        .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
+};
+const getCurrentSHA = () => {
+    const { payload, sha } = github.context;
+    let currentSHA = sha;
+    if (payload.pull_request) {
+        currentSHA = payload.pull_request.head.sha;
+    }
+    else if (payload.workflow_run) {
+        currentSHA = payload.workflow_run.head_sha;
+    }
+    return currentSHA;
+};
+const filterGithubWorkflows = async () => {
+    const currentSHA = getCurrentSHA();
+    const workflows = await getGithubWorkflows();
+    const workflowsInput = core.getMultilineInput('workflows', {
+        required: false,
+    });
+    core.info(JSON.stringify(workflowsInput));
+    return workflows
+        .flatMap((response) => response.data.workflow_runs)
+        .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) &&
+        run.status !== 'completed' &&
+        run.head_sha === currentSHA)
+        .filter((run) => {
+        if (!run.name) {
+            throw Error(`Workflow name not found for run ${JSON.stringify(run)}`);
+        }
+        if (workflowsInput.length > 0) {
+            return workflowsInput.includes(run.name);
+        }
+        return workflowsInput.length === 0;
+    });
+};
+exports.filterGithubWorkflows = filterGithubWorkflows;
+const logGithubWorkflows = (retries, workflows) => {
+    core.info(`Retry #${retries} - ${workflows.length} ${workflows.length > 1 ? 'workflows' : 'workflow'} in progress found. Please, wait until completion or consider cancelling these workflows manually:`);
+    workflows.map((workflow) => {
+        core.info(`* ${workflow.name}: ${workflow.status}`);
+    });
+    core.info('');
+};
+exports.logGithubWorkflows = logGithubWorkflows;
+const checkGithubWorkflows = async () => {
+    const currentSHA = getCurrentSHA();
+    const workflows = await getFailedGithubWorkflows();
+    const workflowsInput = core.getMultilineInput('workflows', {
+        required: false,
+    });
+    const failedWorkflows = workflows
+        .flatMap((response) => response.data.workflow_runs)
+        .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) &&
+        run.status !== 'completed' &&
+        run.head_sha === currentSHA)
+        .filter((run) => {
+        if (!run.name) {
+            throw Error(`Workflow name not found for run ${JSON.stringify(run)}`);
+        }
+        if (workflowsInput.length > 0) {
+            return workflowsInput.includes(run.name);
+        }
+        return workflowsInput.length === 0;
+    });
+    if (failedWorkflows.length === 0) {
+        return;
+    }
+    failedWorkflows.forEach((run) => {
+        core.error(`Workflow ${run.name} failed with state ${run.status}`);
+    });
+    throw Error('One or more failed workflows exist for commit, failing step.');
+};
+exports.checkGithubWorkflows = checkGithubWorkflows;
+
+
+/***/ }),
+
+/***/ 144:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(186));
+const config_1 = __nccwpck_require__(373);
+const github_1 = __nccwpck_require__(978);
+const time_1 = __nccwpck_require__(575);
+async function main() {
+    const { initial_delay, timeout, interval, require_success } = (0, config_1.config)();
+    await (0, time_1.delay)(initial_delay);
+    await (0, time_1.poll)({ timeout, interval }, github_1.logGithubWorkflows);
+    if (require_success) {
+        await (0, github_1.checkGithubWorkflows)();
+    }
+}
+main()
+    .then(() => core.info('👌 Previous Github workflows completed. Resuming...'))
+    .catch((e) => core.setFailed(e.message));
+
+
+/***/ }),
+
+/***/ 575:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.delay = exports.poll = void 0;
+const core = __importStar(__nccwpck_require__(186));
+const config_1 = __nccwpck_require__(373);
+const github_1 = __nccwpck_require__(978);
+const wait = async (ms) => {
+    const promise = (resolve) => setTimeout(() => resolve(`waited ${ms}ms`), ms);
+    return new Promise(promise);
+};
+const delay = (interval) => wait(interval * config_1.oneSecond);
+exports.delay = delay;
+const poll = async (options, log) => {
+    let now = new Date().getTime();
+    const end = now + options.timeout * config_1.oneSecond;
+    let retries = 1;
+    while (now <= end) {
+        const workflows = await (0, github_1.filterGithubWorkflows)();
+        if (workflows.length === 0) {
+            return config_1.ActionStatus.WORKFLOWS_AWAITED_OK;
+        }
+        log(retries, workflows);
+        await delay(options.interval);
+        now = new Date().getTime();
+        retries++;
+    }
+    core.error(`😿 Timeout exceeded (${options.timeout} seconds). Consider increasing the value of "timeout"`);
+    return config_1.ActionStatus.TIMEOUT_EXCEEDED;
+};
+exports.poll = poll;
+
+
+/***/ }),
+
 /***/ 877:
 /***/ ((module) => {
 
@@ -6142,107 +6604,107 @@ module.exports = eval("require")("encoding");
 
 /***/ }),
 
-/***/ 357:
+/***/ 491:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("assert");;
+module.exports = require("assert");
 
 /***/ }),
 
-/***/ 614:
+/***/ 361:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("events");;
+module.exports = require("events");
 
 /***/ }),
 
-/***/ 747:
+/***/ 147:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("fs");;
+module.exports = require("fs");
 
 /***/ }),
 
-/***/ 605:
+/***/ 685:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("http");;
+module.exports = require("http");
 
 /***/ }),
 
-/***/ 211:
+/***/ 687:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("https");;
+module.exports = require("https");
 
 /***/ }),
 
-/***/ 631:
+/***/ 808:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("net");;
+module.exports = require("net");
 
 /***/ }),
 
-/***/ 87:
+/***/ 37:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("os");;
+module.exports = require("os");
 
 /***/ }),
 
-/***/ 622:
+/***/ 17:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("path");;
+module.exports = require("path");
 
 /***/ }),
 
-/***/ 413:
+/***/ 781:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("stream");;
+module.exports = require("stream");
 
 /***/ }),
 
-/***/ 16:
+/***/ 404:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("tls");;
+module.exports = require("tls");
 
 /***/ }),
 
-/***/ 835:
+/***/ 310:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("url");;
+module.exports = require("url");
 
 /***/ }),
 
-/***/ 669:
+/***/ 837:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("util");;
+module.exports = require("util");
 
 /***/ }),
 
-/***/ 761:
+/***/ 796:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("zlib");;
+module.exports = require("zlib");
 
 /***/ })
 
@@ -6279,148 +6741,17 @@ module.exports = require("zlib");;
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__nccwpck_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";/************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-// ESM COMPAT FLAG
-__nccwpck_require__.r(__webpack_exports__);
-
-// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(186);
-;// CONCATENATED MODULE: ./src/config.ts
-
-const oneSecond = 1000;
-var ActionStatus;
-(function (ActionStatus) {
-    ActionStatus["WORKFLOWS_AWAITED_OK"] = "workflows_awaited_ok";
-    ActionStatus["TIMEOUT_EXCEEDED"] = "action_timeout_exceeded";
-})(ActionStatus || (ActionStatus = {}));
-const config = () => {
-    const config = {
-        timeout: parseInt(core.getInput('timeout')),
-        interval: parseInt(core.getInput('interval')),
-        initial_delay: parseInt(core.getInput('initial_delay')),
-    };
-    const info = [
-        `Action configuration:`,
-        `${config.initial_delay}s initial delay,`,
-        `${config.interval}s interval,`,
-        `${config.timeout}s timeout`,
-    ];
-    core.info(info.join(' '));
-    core.info('');
-    return config;
-};
-
-
-// EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
-var github = __nccwpck_require__(438);
-;// CONCATENATED MODULE: ./src/github.ts
-
-
-const getGithubWorkflows = async () => {
-    const client = github.getOctokit(core.getInput('access_token', { required: true }));
-    return Promise.all(['queued', 'in_progress']
-        .map((status) => status)
-        .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
-};
-const filterGithubWorkflows = async () => {
-    const { payload, sha } = github.context;
-    let currentSHA = sha;
-    if (payload.pull_request) {
-        currentSHA = payload.pull_request.head.sha;
-    }
-    else if (payload.workflow_run) {
-        currentSHA = payload.workflow_run.head_sha;
-    }
-    const workflows = await getGithubWorkflows();
-    const workflowsInput = core.getMultilineInput('workflows', {
-        required: false,
-    });
-    core.info(JSON.stringify(workflowsInput));
-    return workflows
-        .flatMap((response) => response.data.workflow_runs)
-        .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.status !== 'completed' &&
-        run.head_sha === currentSHA)
-        .filter((run) => {
-        if (!run.name) {
-            throw Error(`Workflow name not found for run ${JSON.stringify(run)}`);
-        }
-        if (workflowsInput.length > 0) {
-            return workflowsInput.includes(run.name);
-        }
-        return workflowsInput.length === 0;
-    });
-};
-const logGithubWorkflows = (retries, workflows) => {
-    core.info(`Retry #${retries} - ${workflows.length} ${workflows.length > 1 ? 'workflows' : 'workflow'} in progress found. Please, wait until completion or consider cancelling these workflows manually:`);
-    workflows.map((workflow) => {
-        core.info(`* ${workflow.name}: ${workflow.status}`);
-    });
-    core.info('');
-};
-
-
-;// CONCATENATED MODULE: ./src/time.ts
-
-
-
-const wait = async (ms) => {
-    const promise = (resolve) => setTimeout(() => resolve(`waited ${ms}ms`), ms);
-    return new Promise(promise);
-};
-const delay = (interval) => wait(interval * oneSecond);
-const poll = async (options, log) => {
-    let now = new Date().getTime();
-    const end = now + options.timeout * oneSecond;
-    let retries = 1;
-    while (now <= end) {
-        const workflows = await filterGithubWorkflows();
-        if (workflows.length === 0) {
-            return ActionStatus.WORKFLOWS_AWAITED_OK;
-        }
-        log(retries, workflows);
-        await delay(options.interval);
-        now = new Date().getTime();
-        retries++;
-    }
-    core.error(`😿 Timeout exceeded (${options.timeout} seconds). Consider increasing the value of "timeout"`);
-    return ActionStatus.TIMEOUT_EXCEEDED;
-};
-
-
-;// CONCATENATED MODULE: ./src/index.ts
-
-
-
-
-async function main() {
-    const { initial_delay, timeout, interval } = config();
-    await delay(initial_delay);
-    await poll({ timeout, interval }, logGithubWorkflows);
-}
-main()
-    .then(() => core.info('👌 Previous Github workflows completed. Resuming...'))
-    .catch((e) => core.setFailed(e.message));
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(144);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
