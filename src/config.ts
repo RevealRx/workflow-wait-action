@@ -12,6 +12,7 @@ const config = () => {
     timeout: parseInt(core.getInput('timeout')),
     interval: parseInt(core.getInput('interval')),
     initial_delay: parseInt(core.getInput('initial_delay')),
+    require_success: core.getInput('require_success').toLowerCase() === 'true'
   }
 
   const info = [
@@ -19,6 +20,7 @@ const config = () => {
     `${config.initial_delay}s initial delay,`,
     `${config.interval}s interval,`,
     `${config.timeout}s timeout`,
+    `require success: ${config.require_success}`,
   ]
   core.info(info.join(' '))
   core.info('')
