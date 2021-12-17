@@ -1,4 +1,4 @@
-name: workflow-last
+name: workflow-last-status-check
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - release/0.2.0
 
 jobs:
-  workflow_last:
+  workflow_last_status_check:
     runs-on: ubuntu-latest
     steps:
       - name: Code checkout

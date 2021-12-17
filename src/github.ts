@@ -113,13 +113,13 @@ const checkGithubWorkflows = async () => {
     required: false,
   })
   
-  return workflows
+  const failedWorkflows = workflows
     .flatMap((response) => response.data.workflow_runs)
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
         run.status !== 'completed' &&
-        run.head_sha === currentSHA // only keep workflows running from the same SHA/branch
+        run.head_sha === currentSHA
     )
     .filter((run) => {
       if (!run.name) {
@@ -130,9 +130,16 @@ const checkGithubWorkflows = async () => {
       }
       return workflowsInput.length === 0
     })
-    .forEach((run) => {
-      throw Error(`Workflow ${run.name} failed with state ${run.status}`)
-    })
+    
+  if (failedWorkflows.length === 0) {
+    return
+  }
+
+  failedWorkflows.forEach((run) => {
+    core.error(`Workflow ${run.name} failed with state ${run.status}`)
+  })
+  
+  throw Error('One or more failed workflows exist for commit, failing step.')
 }
 
 export { checkGithubWorkflows, filterGithubWorkflows, logGithubWorkflows, GithubWorkflow }
