@@ -40,7 +40,7 @@ const getFailedGithubWorkflows = async () => {
   )
 
   return Promise.all(
-    ['failure', 'cancelled', 'timed_out']
+    ['completed', 'cancelled', 'timed_out', 'failure']
       .map((status) => <WorkflowStatus>status)
       .map((status) =>
         client.request(
@@ -118,7 +118,7 @@ const checkGithubWorkflows = async () => {
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.status !== 'completed' &&
+        run.conclusion !== 'completed' &&
         run.head_sha === currentSHA
     )
     .filter((run) => {
@@ -136,7 +136,7 @@ const checkGithubWorkflows = async () => {
   }
 
   failedWorkflows.forEach((run) => {
-    core.error(`Workflow ${run.name} failed with state ${run.status}`)
+    core.error(`Workflow ${run.name}, run id: ${run.id} failed with conclusion: ${run.conclusion}, See: ${run.html_url}`)
   })
   
   throw Error('One or more failed workflows exist for commit, failing step.')

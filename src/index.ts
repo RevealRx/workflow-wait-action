@@ -9,7 +9,9 @@ async function main() {
   await poll({ timeout, interval }, logGithubWorkflows)
   
   if (require_success) {
+    core.info('Checking matching workflows to ensure they succeeded..')
     await checkGithubWorkflows()
+    core.info('All workflows were successful')
   }
 }
 

@@ -6486,7 +6486,7 @@ const checkGithubWorkflows = async () => {
         return;
     }
     failedWorkflows.forEach((run) => {
-        core.error(`Workflow ${run.name} failed with conclusion ${run.conclusion}`);
+        core.error(`Workflow ${run.name}, run id: ${run.id} failed with conclusion: ${run.conclusion}, See: ${run.html_url}`);
     });
     throw Error('One or more failed workflows exist for commit, failing step.');
 };
@@ -6529,8 +6529,9 @@ async function main() {
     await (0, time_1.delay)(initial_delay);
     await (0, time_1.poll)({ timeout, interval }, github_1.logGithubWorkflows);
     if (require_success) {
-        core.info('Checking matching workflows to ensure they succeeded');
+        core.info('Checking matching workflows to ensure they succeeded..');
         await (0, github_1.checkGithubWorkflows)();
+        core.info('All workflows were successful');
     }
 }
 main()
