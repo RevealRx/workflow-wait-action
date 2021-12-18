@@ -6416,7 +6416,7 @@ const getGithubWorkflows = async () => {
 };
 const getFailedGithubWorkflows = async () => {
     const client = github.getOctokit(core.getInput('access_token', { required: true }));
-    return Promise.all(['failure', 'cancelled', 'timed_out']
+    return Promise.all(['completed', 'cancelled', 'timed_out', 'failure']
         .map((status) => status)
         .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
 };
@@ -6471,7 +6471,7 @@ const checkGithubWorkflows = async () => {
     const failedWorkflows = workflows
         .flatMap((response) => response.data.workflow_runs)
         .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.status !== 'completed' &&
+        run.conclusion !== 'completed' &&
         run.head_sha === currentSHA)
         .filter((run) => {
         if (!run.name) {
@@ -6486,7 +6486,7 @@ const checkGithubWorkflows = async () => {
         return;
     }
     failedWorkflows.forEach((run) => {
-        core.error(`Workflow ${run.name} failed with state ${run.status}`);
+        core.error(`Workflow ${run.name} failed with conclusion ${run.conclusion}`);
     });
     throw Error('One or more failed workflows exist for commit, failing step.');
 };
@@ -6529,6 +6529,7 @@ async function main() {
     await (0, time_1.delay)(initial_delay);
     await (0, time_1.poll)({ timeout, interval }, github_1.logGithubWorkflows);
     if (require_success) {
+        core.info('Checking matching workflows to ensure they succeeded');
         await (0, github_1.checkGithubWorkflows)();
     }
 }
