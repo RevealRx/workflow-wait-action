@@ -1,0 +1,21 @@
+name: create-release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        shell: bash
+        run: |
+          yarn install
+          yarn build
+      
+      - uses: JasonEtco/build-and-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
