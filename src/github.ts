@@ -113,7 +113,6 @@ const checkGithubWorkflows = async () => {
     required: false,
   })
   
-  core.info(`Found ${workflows.length} workflows`)
   const failedWorkflows = workflows
     .flatMap((response) => response.data.workflow_runs)
     .filter(
