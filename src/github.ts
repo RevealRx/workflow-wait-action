@@ -113,6 +113,7 @@ const checkGithubWorkflows = async () => {
     required: false,
   })
   
+  core.info(`Found ${workflows.length} workflows`)
   const failedWorkflows = workflows
     .flatMap((response) => response.data.workflow_runs)
     .filter(
@@ -135,7 +136,7 @@ const checkGithubWorkflows = async () => {
   }
 
   failedWorkflows.forEach((run) => {
-    core.error(`Workflow ${run.name}, run id: ${run.id} (${run.created_at}) failed with conclusion: ${run.conclusion}, See: ${run.html_url}`)
+    core.error(`Workflow ${run.name}, run id: ${run.id} (${run.created_at}) failed with conclusion: ${run.conclusion} and status of ${run.status}, See: ${run.html_url}`)
   })
   
   throw Error('One or more failed workflows exist for commit, failing step.')
