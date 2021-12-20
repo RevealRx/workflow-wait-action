@@ -78,6 +78,7 @@ const filterGithubWorkflows = async () => {
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
+        run.status !== 'completed' &&
         run.head_sha === currentSHA // only keep workflows running from the same SHA/branch
     )
     .filter((run) => {
@@ -117,7 +118,6 @@ const checkGithubWorkflows = async () => {
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.conclusion !== 'completed' &&
         run.head_sha === currentSHA
     )
     .filter((run) => {
