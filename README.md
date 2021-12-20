@@ -55,9 +55,10 @@ jobs:
           access_token: ${{ secrets.GITHUB_TOKEN }}
           timeout: 600
           interval: 10
+          require_success: true
           initial_delay: 30
 
-      - name: Resume and run once, after all workflows are completed
+      - name: Resume and run once, after all workflows are completed and successful
         run: date
 ```
 
@@ -69,7 +70,10 @@ jobs:
 | timeout       | Action timeout. If in-progress workflows are not completed within the timeout period, the Action will fails the workflow | No         | 600                  |                                   |
 | interval      | Interval used to poll the status of the workflows                                                                        | No         | 10                   |                                   |
 | initial_delay | Initial delay used to give minimal time to all workflows to be queued & started                                          | No         | 30                   |                                   |
-| workflows     | List of workflows to wait for. Must be a multiline string using                                                          | No         | ''                   | \| <br/>workflow-1<br/>workflow-2 |
+| require_success | Check that all workflows have completed successfully before continuing                                                 | No         | false                   |                                   |
+
+| workflows     | List of workflows to wait for. Must be a multiline string using                                                          | No         | ''                   |
+\| <br/>workflow-1<br/>workflow-2 |
 
 ## Limitations
 
