@@ -40,7 +40,7 @@ const getFailedGithubWorkflows = async () => {
   )
 
   return Promise.all(
-    ['completed', 'cancelled', 'timed_out', 'failure']
+    ['cancelled', 'timed_out', 'failure']
       .map((status) => <WorkflowStatus>status)
       .map((status) =>
         client.request(
@@ -78,7 +78,6 @@ const filterGithubWorkflows = async () => {
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.status !== 'completed' &&
         run.head_sha === currentSHA // only keep workflows running from the same SHA/branch
     )
     .filter((run) => {
