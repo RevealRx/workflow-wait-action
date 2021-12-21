@@ -6458,6 +6458,9 @@ const logGithubWorkflows = (retries, workflows) => {
 exports.logGithubWorkflows = logGithubWorkflows;
 const checkGithubWorkflows = async () => {
     const failedWorkflows = await getWorkflowsWithStatus(['cancelled', 'timed_out', 'failure']);
+    if (failedWorkflows.length === 0) {
+        return;
+    }
     failedWorkflows.forEach((run) => {
         core.error(`Workflow ${run.name}, run id: ${run.id} (${run.created_at}) failed with conclusion: ${run.conclusion} and status of ${run.status}, See: ${run.html_url}`);
     });
