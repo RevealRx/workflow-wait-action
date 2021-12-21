@@ -22,7 +22,7 @@ jobs:
           initial_delay: 5
           require_success: true
           excludedWorkflows: |
-            workflow-last
+            workflow-fail
 
       - name: Resume and run once, after all workflows are completed (should never happen)
         run: date
