@@ -6434,6 +6434,8 @@ const getWorkflowsWithStatus = async (statuses) => {
     const runs = results
         .flatMap((response) => response.data.workflow_runs);
     const isNil = (value) => value === null || value.name === undefined;
+    core.info(`Runs found with null names: ${runs.some((run) => isNil(run.name))}`);
+    core.info(`Run names: ${JSON.stringify(runs.map(x => x.name))}`);
     if (runs.some((run) => isNil(run.name))) {
         throw Error(`Workflow name not found for run ${JSON.stringify(runs.filter((run) => run.name === null || run.name === undefined))}`);
     }
