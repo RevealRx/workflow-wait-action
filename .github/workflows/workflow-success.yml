@@ -1,0 +1,18 @@
+name: workflow-success
+
+on:
+  push:
+    branches:
+      - main
+      - release/0.2.0
+
+jobs:
+  workflow_success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflow Success Test
+        shell: bash
+        run: |
+          sleep 15
+          date
+          exit 0
