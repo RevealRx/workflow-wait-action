@@ -17,6 +17,19 @@ type WorkflowStatus =
   | 'waiting'
   | undefined
 
+const getCurrentSHA = () => {
+  const { payload, sha } = github.context
+  let currentSHA = sha
+   
+  if (payload.pull_request) {
+    currentSHA = payload.pull_request.head.sha
+  } else if (payload.workflow_run) {
+    currentSHA = payload.workflow_run.head_sha
+  }
+  
+  return currentSHA;
+}
+  
 const getWorkflowsWithStatus = async (statuses: string[]) => {
   const client = github.getOctokit(
     core.getInput('access_token', { required: true })
@@ -33,103 +46,36 @@ const getWorkflowsWithStatus = async (statuses: string[]) => {
       ) 
   );
   
-  const excludeWorkflows = core.getMultilineInput('excludedWorkflows', {
+  const includedWorkflows = core.getMultilineInput('workflows', {
+    required: false,
+  })
+
+  const excludedWorkflows = core.getMultilineInput('excludedWorkflows', {
     required: false,
   });
-
-  core.info(`Found ${excludeWorkflows.length} exlcuded workflows`);
-
-  return results
-    .flatMap((response) => response.data.workflow_runs);
-    //./ilter((run) => !excludeWorkflows.includes(run.name));
-}
-
-const getGithubWorkflows = async () => {
-  const client = github.getOctokit(
-    core.getInput('access_token', { required: true })
-  )
-
-  return Promise.all(
-    ['queued', 'in_progress']
-      .map((status) => <WorkflowStatus>status)
-      .map((status) =>
-        client.request(
-          `GET /repos/{owner}/{repo}/actions/runs`, // See details: https://docs.github.com/en/rest/reference/actions#list-workflow-runs-for-a-repository
-          { ...github.context.repo, status }
-        )
-      )
-  )
-}
-
-const getFailedGithubWorkflows = async () => {
-  const client = github.getOctokit(
-    core.getInput('access_token', { required: true })
-  )
-
-  const tes2t = ['cancelled', 'timed_out', 'failure'];
-  const test = await getWorkflowsWithStatus(tes2t);
-
-  core.info(`Found ${test.length} results`);
-  test.forEach(run => {
-    core.info(`run id: ${run.id}, status: ${run.status}, head_sha: ${run.head_sha}, name: ${run.name}`)
-  });
-
-  return Promise.all(
-    ['cancelled', 'timed_out', 'failure']
-      .map((status) => <WorkflowStatus>status)
-      .map((status) =>
-        client.request(
-          `GET /repos/{owner}/{repo}/actions/runs`, // See details: https://docs.github.com/en/rest/reference/actions#list-workflow-runs-for-a-repository
-          { ...github.context.repo, status }
-        )
-      )
-  )
-}
-
-const getCurrentSHA = () => {
-  const { payload, sha } = github.context
-  let currentSHA = sha
   
-  if (payload.pull_request) {
-    currentSHA = payload.pull_request.head.sha
-  } else if (payload.workflow_run) {
-    currentSHA = payload.workflow_run.head_sha
+  const currentSHA = getCurrentSHA()
+
+  const runs = results
+    .flatMap((response) => response.data.workflow_runs);
+
+  const isNil = (value: any) => value === null || value.name === undefined;
+  
+  if (runs.some((run) => isNil(run.name))) {
+    throw Error(`Workflow name not found for run ${JSON.stringify(runs.filter((run) => run.name === null || run.name === undefined))}`);
   }
 
-  return currentSHA;
+  return runs
+    .filter((run) => (includedWorkflows.length > 0 ? includedWorkflows.includes(run.name) : true))
+    .filter((run) => (excludedWorkflows.length > 0 ? !excludedWorkflows.includes(run.name) : true))
+    .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) && run.head_sha === currentSHA); // only keep workflows running from the same SHA/branch);
 }
 
 const filterGithubWorkflows = async () => {
-  
-  const currentSHA = getCurrentSHA()
-  const workflows = await getGithubWorkflows()
-  const workflowsInput = core.getMultilineInput('workflows', {
-    required: false,
-  })
-  // const excludeWorkflows = core.getMultilineInput('excludedWorkflows', {
-  //   required: false,
-  // });
-
-  core.info(JSON.stringify(workflowsInput))
+  const workflows = await getWorkflowsWithStatus(['queued', 'in_progress']);
 
   return workflows
-    .flatMap((response) => response.data.workflow_runs)
-    // .filter((run) => !excludeWorkflows.includes(run.name))
-    .filter(
-      (run) =>
-        run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.status !== 'completed' &&
-        run.head_sha === currentSHA // only keep workflows running from the same SHA/branch
-    )
-    .filter((run) => {
-      if (!run.name) {
-        throw Error(`Workflow name not found for run ${JSON.stringify(run)}`)
-      }
-      if (workflowsInput.length > 0) {
-        return workflowsInput.includes(run.name)
-      }
-      return workflowsInput.length === 0
-    })
+    .filter((run) => run.status !== 'completed');
 }
 
 type GithubWorkflow = { name: string; status: string }
@@ -147,39 +93,8 @@ const logGithubWorkflows = (retries: number, workflows: GithubWorkflow[]) => {
 }
 
 const checkGithubWorkflows = async () => {
-  const currentSHA = getCurrentSHA()
-  const workflows = await getFailedGithubWorkflows()
-  const workflowsInput = core.getMultilineInput('workflows', {
-    required: false,
-  })
-
-  // const excludeWorkflows = core.getMultilineInput('ignoredWorkflows', {
-  //   required: false,
-  // });
-
+  const failedWorkflows = await getWorkflowsWithStatus(['cancelled', 'timed_out', 'failure']);
   
-  const failedWorkflows = workflows
-    .flatMap((response) => response.data.workflow_runs)
-    // .filter((run) => !excludeWorkflows.includes(run.name))
-    .filter(
-      (run) =>
-        run.id !== Number(process.env.GITHUB_RUN_ID) &&
-        run.head_sha === currentSHA
-    )
-    .filter((run) => {
-      if (!run.name) {
-        throw Error(`Workflow name not found for run ${JSON.stringify(run)}`)
-      }
-      if (workflowsInput.length > 0) {
-        return workflowsInput.includes(run.name)
-      }
-      return workflowsInput.length === 0
-    })
-    
-  if (failedWorkflows.length === 0) {
-    return
-  }
-
   failedWorkflows.forEach((run) => {
     core.error(`Workflow ${run.name}, run id: ${run.id} (${run.created_at}) failed with conclusion: ${run.conclusion} and status of ${run.status}, See: ${run.html_url}`)
   })

@@ -6,6 +6,7 @@
     "target": "esnext",
     "moduleResolution": "node",
     "strict": true,
+	"strictNullChecks": false,
     "noImplicitReturns": true,
     "noEmitOnError": true,
     "noUnusedLocals": true,
