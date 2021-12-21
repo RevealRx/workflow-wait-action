@@ -17,6 +17,33 @@ type WorkflowStatus =
   | 'waiting'
   | undefined
 
+const getWorkflowsWithStatus = async (statuses: string[]) => {
+  const client = github.getOctokit(
+    core.getInput('access_token', { required: true })
+  );
+
+  const results = await Promise.all(
+    statuses
+      .map((status) => <WorkflowStatus>status)
+      .map((status) =>
+        client.request(
+          `GET /repos/{owner}/{repo}/actions/runs`, // See details: https://docs.github.com/en/rest/reference/actions#list-workflow-runs-for-a-repository
+          { ...github.context.repo, status }
+        )
+      ) 
+  );
+  
+  const excludeWorkflows = core.getMultilineInput('excludedWorkflows', {
+    required: false,
+  });
+
+  core.info(`Found ${excludeWorkflows.length} exlcuded workflows`);
+
+  return results
+    .flatMap((response) => response.data.workflow_runs);
+    //./ilter((run) => !excludeWorkflows.includes(run.name));
+}
+
 const getGithubWorkflows = async () => {
   const client = github.getOctokit(
     core.getInput('access_token', { required: true })
@@ -38,6 +65,14 @@ const getFailedGithubWorkflows = async () => {
   const client = github.getOctokit(
     core.getInput('access_token', { required: true })
   )
+
+  const tes2t = ['cancelled', 'timed_out', 'failure'];
+  const test = await getWorkflowsWithStatus(tes2t);
+
+  core.info(`Found ${test.length} results`);
+  test.forEach(run => {
+    core.info(`run id: ${run.id}, status: ${run.status}, head_sha: ${run.head_sha}, name: ${run.name}`)
+  });
 
   return Promise.all(
     ['cancelled', 'timed_out', 'failure']
@@ -71,10 +106,15 @@ const filterGithubWorkflows = async () => {
   const workflowsInput = core.getMultilineInput('workflows', {
     required: false,
   })
+  // const excludeWorkflows = core.getMultilineInput('excludedWorkflows', {
+  //   required: false,
+  // });
+
   core.info(JSON.stringify(workflowsInput))
 
   return workflows
     .flatMap((response) => response.data.workflow_runs)
+    // .filter((run) => !excludeWorkflows.includes(run.name))
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&
@@ -112,9 +152,15 @@ const checkGithubWorkflows = async () => {
   const workflowsInput = core.getMultilineInput('workflows', {
     required: false,
   })
+
+  // const excludeWorkflows = core.getMultilineInput('ignoredWorkflows', {
+  //   required: false,
+  // });
+
   
   const failedWorkflows = workflows
     .flatMap((response) => response.data.workflow_runs)
+    // .filter((run) => !excludeWorkflows.includes(run.name))
     .filter(
       (run) =>
         run.id !== Number(process.env.GITHUB_RUN_ID) &&

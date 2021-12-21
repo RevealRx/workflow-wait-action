@@ -6408,6 +6408,18 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.logGithubWorkflows = exports.filterGithubWorkflows = exports.checkGithubWorkflows = void 0;
 const core = __importStar(__nccwpck_require__(363));
 const github = __importStar(__nccwpck_require__(862));
+const getWorkflowsWithStatus = async (statuses) => {
+    const client = github.getOctokit(core.getInput('access_token', { required: true }));
+    const results = await Promise.all(statuses
+        .map((status) => status)
+        .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
+    const excludeWorkflows = core.getMultilineInput('excludedWorkflows', {
+        required: false,
+    });
+    core.info(`Found ${excludeWorkflows.length} exlcuded workflows`);
+    return results
+        .flatMap((response) => response.data.workflow_runs);
+};
 const getGithubWorkflows = async () => {
     const client = github.getOctokit(core.getInput('access_token', { required: true }));
     return Promise.all(['queued', 'in_progress']
@@ -6416,6 +6428,12 @@ const getGithubWorkflows = async () => {
 };
 const getFailedGithubWorkflows = async () => {
     const client = github.getOctokit(core.getInput('access_token', { required: true }));
+    const tes2t = ['cancelled', 'timed_out', 'failure'];
+    const test = await getWorkflowsWithStatus(tes2t);
+    core.info(`Found ${test.length} results`);
+    test.forEach(run => {
+        core.info(`run id: ${run.id}, status: ${run.status}, head_sha: ${run.head_sha}, name: ${run.name}`);
+    });
     return Promise.all(['cancelled', 'timed_out', 'failure']
         .map((status) => status)
         .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));

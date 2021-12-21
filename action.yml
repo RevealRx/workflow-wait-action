@@ -28,6 +28,10 @@ inputs:
     description: 'Indicates if workflows need to be successful to continue'
     default: 'false'
     required: false
+  excludedWorkflows:
+    description: 'List of workflows to exlcude.  Must be a multiline string using |'
+    default: ''
+    required: false
 
 runs:
   using: 'node16'
