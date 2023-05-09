@@ -13023,51 +13023,71 @@ const getCurrentSHA = () => {
     return currentSHA;
 };
 const getWorkflowsWithStatus = async (statuses) => {
-    const client = github.getOctokit(core.getInput('access_token', { required: true }));
-    const results = await Promise.all(statuses
-        .map((status) => status)
-        .map((status) => client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status })));
-    const includedWorkflows = core.getMultilineInput('workflows', {
+    const client = github.getOctokit(core.getInput("access_token", { required: true }));
+    const results = [];
+    for (const status of statuses) {
+        let success = false;
+        let attempts = 0;
+        do {
+            attempts++;
+            try {
+                var result = await client.request(`GET /repos/{owner}/{repo}/actions/runs`, { ...github.context.repo, status });
+                results.push(result);
+                success = true;
+            }
+            catch (exception) {
+                core.error(`Error encountered while calling github api. Attempt ${attempts} of 3. Error ${JSON.stringify(exception)}`);
+            }
+        } while (success === false && attempts <= 3);
+    }
+    const includedWorkflows = core.getMultilineInput("workflows", {
         required: false,
     });
-    const excludedWorkflows = core.getMultilineInput('excludedWorkflows', {
+    const excludedWorkflows = core.getMultilineInput("excludedWorkflows", {
         required: false,
     });
     const currentSHA = getCurrentSHA();
-    const runs = results
-        .flatMap((response) => response.data.workflow_runs);
+    const runs = results.flatMap((response) => response.data.workflow_runs);
     const isNil = (value) => value === null || value === undefined;
     if (runs.some((run) => isNil(run.name))) {
         throw Error(`Workflow name not found for run ${JSON.stringify(runs.filter((run) => run.name === null || run.name === undefined))}`);
     }
     return runs
-        .filter((run) => (includedWorkflows.length > 0 ? includedWorkflows.includes(run.name) : true))
-        .filter((run) => (excludedWorkflows.length > 0 ? !excludedWorkflows.includes(run.name) : true))
-        .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) && run.head_sha === currentSHA);
+        .filter((run) => includedWorkflows.length > 0
+        ? includedWorkflows.includes(run.name)
+        : true)
+        .filter((run) => excludedWorkflows.length > 0
+        ? !excludedWorkflows.includes(run.name)
+        : true)
+        .filter((run) => run.id !== Number(process.env.GITHUB_RUN_ID) &&
+        run.head_sha === currentSHA);
 };
 const filterGithubWorkflows = async () => {
-    const workflows = await getWorkflowsWithStatus(['queued', 'in_progress']);
-    return workflows
-        .filter((run) => run.status !== 'completed');
+    const workflows = await getWorkflowsWithStatus(["queued", "in_progress"]);
+    return workflows.filter((run) => run.status !== "completed");
 };
 exports.filterGithubWorkflows = filterGithubWorkflows;
 const logGithubWorkflows = (retries, workflows) => {
-    core.info(`Retry #${retries} - ${workflows.length} ${workflows.length > 1 ? 'workflows' : 'workflow'} in progress found. Please, wait until completion or consider cancelling these workflows manually:`);
+    core.info(`Retry #${retries} - ${workflows.length} ${workflows.length > 1 ? "workflows" : "workflow"} in progress found. Please, wait until completion or consider cancelling these workflows manually:`);
     workflows.map((workflow) => {
         core.info(`* ${workflow.name}: ${workflow.status}`);
     });
-    core.info('');
+    core.info("");
 };
 exports.logGithubWorkflows = logGithubWorkflows;
 const checkGithubWorkflows = async () => {
-    const failedWorkflows = await getWorkflowsWithStatus(['cancelled', 'timed_out', 'failure']);
+    const failedWorkflows = await getWorkflowsWithStatus([
+        "cancelled",
+        "timed_out",
+        "failure",
+    ]);
     if (failedWorkflows.length === 0) {
         return;
     }
     failedWorkflows.forEach((run) => {
         core.error(`Workflow ${run.name}, run id: ${run.id} (${run.created_at}) failed with conclusion: ${run.conclusion} and status of ${run.status}, See: ${run.html_url}`);
     });
-    throw Error('One or more failed workflows exist for commit, failing step.');
+    throw Error("One or more failed workflows exist for commit, failing step.");
 };
 exports.checkGithubWorkflows = checkGithubWorkflows;
 
