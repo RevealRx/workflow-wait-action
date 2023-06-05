@@ -83,12 +83,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@commitlint/config-conventional@npm:^17.6.3":
-  version: 17.6.3
-  resolution: "@commitlint/config-conventional@npm:17.6.3"
+"@commitlint/config-conventional@npm:^17.6.5":
+  version: 17.6.5
+  resolution: "@commitlint/config-conventional@npm:17.6.5"
   dependencies:
     conventional-changelog-conventionalcommits: ^5.0.0
-  checksum: 2dbe26cfafdd320141373ed7a7c656d35279300658b4474509bbcace80887701bc493247f57b27284e435029ade8680a822aeb454a7587d89fa42a0e7a774ce1
+  checksum: f2c637a9935044d6dc800eabbb0e032354afb35a7c0dd65d37115320a0fbcf4586ad769647039d0d9347988182213d7ee53339df2af9b2c8a51209ab0225366f
   languageName: node
   linkType: hard
 
@@ -2911,11 +2911,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.6.4 || ^5.0.0#~builtin<compat/typescript>, typescript@patch:typescript@^5.0.4#~builtin<compat/typescript>":
   version: 5.0.4
-  resolution: "typescript@patch:typescript@npm%3A5.0.4#~builtin<compat/typescript>::version=5.0.4&hash=1f5320"
+  resolution: "typescript@patch:typescript@npm%3A5.0.4#~builtin<compat/typescript>::version=5.0.4&hash=85af82"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 6a1fe9a77bb9c5176ead919cc4a1499ee63e46b4e05bf667079f11bf3a8f7887f135aa72460a4c3b016e6e6bb65a822cb8689a6d86cbfe92d22cc9f501f09213
+  checksum: bb309d320c59a26565fb3793dba550576ab861018ff3fd1b7fccabbe46ae4a35546bc45f342c0a0b6f265c801ccdf64ffd68f548f117ceb7f0eac4b805cd52a9
   languageName: node
   linkType: hard
 
@@ -3037,7 +3037,7 @@ __metadata:
     "@actions/core": ^1.10.0
     "@actions/github": ^5.1.1
     "@commitlint/cli": ^17.6.3
-    "@commitlint/config-conventional": ^17.6.3
+    "@commitlint/config-conventional": ^17.6.5
     "@commitlint/prompt-cli": ^17.6.3
     "@octokit/types": 9.2.1
     "@types/node": 20.1.1
