@@ -195,29 +195,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@commitlint/prompt-cli@npm:^17.6.3":
-  version: 17.6.3
-  resolution: "@commitlint/prompt-cli@npm:17.6.3"
+"@commitlint/prompt-cli@npm:^17.6.5":
+  version: 17.6.5
+  resolution: "@commitlint/prompt-cli@npm:17.6.5"
   dependencies:
-    "@commitlint/prompt": ^17.6.3
+    "@commitlint/prompt": ^17.6.5
     execa: ^5.0.0
     inquirer: ^6.5.2
   bin:
     commit: cli.js
-  checksum: 7d58b3f74724d64a64dc7c0e4150d51560039123b2cfd5842da14a2eed90c7bdaa6359b08c2a486caa5bba329f5fbe54fd8f7419179601acc52fda4af58fb20d
+  checksum: 2b9c81c6b9575c7b11d1cf323e3f4267ecc0559b58c1038712d9fe34c990f5c926e87cbfd6795abe2dd4b2d06d0fbfffd5c6b0e165d357a594c3a2811f4bc0d9
   languageName: node
   linkType: hard
 
-"@commitlint/prompt@npm:^17.6.3":
-  version: 17.6.3
-  resolution: "@commitlint/prompt@npm:17.6.3"
+"@commitlint/prompt@npm:^17.6.5":
+  version: 17.6.5
+  resolution: "@commitlint/prompt@npm:17.6.5"
   dependencies:
     "@commitlint/ensure": ^17.4.4
     "@commitlint/load": ^17.5.0
     "@commitlint/types": ^17.4.4
     chalk: ^4.1.0
     inquirer: ^6.5.2
-  checksum: 54d4fdb626f52aaaf23baa723039f9bc17ea77608d54fb7f86463351a62f7fcd891a18cfde2bcaa3157643a891ad58104b1398332a4fc21f3ef2ab096a6063fd
+  checksum: d904e7594082e284e2c491b6ac7342cc28951b7a095acd6f986dd75589f3d963266c103c5457460cf0b3bc6179636b7bc4e31f4e045682367c5c56d39ee80509
   languageName: node
   linkType: hard
 
@@ -2911,11 +2911,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.6.4 || ^5.0.0#~builtin<compat/typescript>, typescript@patch:typescript@^5.0.4#~builtin<compat/typescript>":
   version: 5.0.4
-  resolution: "typescript@patch:typescript@npm%3A5.0.4#~builtin<compat/typescript>::version=5.0.4&hash=1f5320"
+  resolution: "typescript@patch:typescript@npm%3A5.0.4#~builtin<compat/typescript>::version=5.0.4&hash=85af82"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 6a1fe9a77bb9c5176ead919cc4a1499ee63e46b4e05bf667079f11bf3a8f7887f135aa72460a4c3b016e6e6bb65a822cb8689a6d86cbfe92d22cc9f501f09213
+  checksum: bb309d320c59a26565fb3793dba550576ab861018ff3fd1b7fccabbe46ae4a35546bc45f342c0a0b6f265c801ccdf64ffd68f548f117ceb7f0eac4b805cd52a9
   languageName: node
   linkType: hard
 
@@ -3038,7 +3038,7 @@ __metadata:
     "@actions/github": ^5.1.1
     "@commitlint/cli": ^17.6.3
     "@commitlint/config-conventional": ^17.6.3
-    "@commitlint/prompt-cli": ^17.6.3
+    "@commitlint/prompt-cli": ^17.6.5
     "@octokit/types": 9.2.1
     "@types/node": 20.1.1
     "@vercel/ncc": ^0.36.1

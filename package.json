@@ -26,7 +26,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.3",
     "@commitlint/config-conventional": "^17.6.3",
-    "@commitlint/prompt-cli": "^17.6.3",
+    "@commitlint/prompt-cli": "^17.6.5",
     "@octokit/types": "9.2.1",
     "@types/node": "20.1.1",
     "@vercel/ncc": "^0.36.1",
